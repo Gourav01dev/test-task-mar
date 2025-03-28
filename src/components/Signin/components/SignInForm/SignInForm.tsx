@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
+'use client';
 
+import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import InputField from "@/components/Signin/components/InputFeild/InputFeild";
 import { Box, Button, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material";
 import Link from "next/link";
-import { useDispatch, useSelector } from "react-redux";
-import { signUp } from "@/redux/slices/authSlice";
-
+import { authService } from "@/backend/services/auth.service";
 
 interface FormValues {
   email: string;
@@ -17,10 +16,10 @@ interface FormValues {
 
 const SigninForm = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const {user,loading,errors} = useSelector((state:any)=>state.auth)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [process, setProcess] = useState(false);
+
   const formik = useFormik<FormValues>({
     initialValues: {
       email: "",
@@ -30,32 +29,32 @@ const SigninForm = () => {
       email: Yup.string().email("Invalid email format").required("Email is required"),
       password: Yup.string().min(8, "Password must be at least 8 characters").required("Password is required"),
     }),
-    onSubmit:  (values) => {
-      dispatch(signUp(values)).then((res:any) => {
-        if (res.meta.requestStatus === "fulfilled") {
-          handleSubmit(values);
+    onSubmit: async (values) => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Use our Supabase auth service to sign in
+        await authService.signIn(values.email, values.password);
+        
+        // If successful, redirect to dashboard
+        router.push('/dashboard');
+      } catch (err) {
+        // Handle error
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred');
         }
-      });      
+      } finally {
+        setLoading(false);
+      }
     },
   });
-
-  useEffect(() => {
-    console.log(loading);
-    
-  
-  }, [loading])
-  
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
-
-  const handleSubmit = async (values: FormValues) => {
-    router.push('/home')
-    console.log(values);
-    
-    }
-  
 
   return (
     <form onSubmit={formik.handleSubmit} className="w-full">
@@ -87,10 +86,34 @@ const SigninForm = () => {
           />
         </div>
       </div>
-      <FormControlLabel control={<Checkbox value="remember" />} label="Keep me signed in" sx={{ my: 1, color: "#9D9D9D", fontWeight: "500", text: "12px" }} />
-      <Button fullWidth variant="contained"
-      disabled={loading}
-       sx={{ py: 1, bgcolor: "#F99F1B", boxShadow: "none", "&:hover": { backgroundColor: "none", color: "none", boxShadow: "none" } }} type="submit">
+      
+      {error && (
+        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+          {error}
+        </Typography>
+      )}
+      
+      <FormControlLabel 
+        control={<Checkbox value="remember" />} 
+        label="Keep me signed in" 
+        sx={{ my: 1, color: "#9D9D9D", fontWeight: "500", text: "12px" }} 
+      />
+      
+      <Button 
+        fullWidth 
+        variant="contained"
+        disabled={loading}
+        sx={{ 
+          py: 1, 
+          bgcolor: "#F99F1B", 
+          boxShadow: "none", 
+          "&:hover": { 
+            backgroundColor: "#e89417", 
+            boxShadow: "none" 
+          } 
+        }} 
+        type="submit"
+      >
         {loading ? "Loading..." : "Login"}
       </Button>
    
@@ -102,7 +125,7 @@ const SigninForm = () => {
 
       <Box sx={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Typography variant="body2" display="inline" sx={{ color: "#000000", fontSize: "16px", fontWeight: "400" }}>
-          Dont have an account?
+          Don&apos;t have an account?
         </Typography>
         <Link href="/sign-up" passHref>
           <Typography variant="body2" sx={{ color: "#FFA726", ml: 0.5, fontWeight: "bold", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>

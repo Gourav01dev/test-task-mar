@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -5,8 +7,7 @@ import { useRouter } from "next/navigation";
 import InputField from "@/components/Signin/components/InputFeild/InputFeild";
 import { Box, Button, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material";
 import Link from "next/link";
-import { useDispatch, useSelector } from "react-redux";
-import { login } from "@/redux/slices/authSlice";
+import { authService } from "@/backend/services/auth.service";
 
 interface FormValues {
   firstName: string;
@@ -17,14 +18,11 @@ interface FormValues {
 }
 
 const SignupForm = () => {
-  const dispatch = useDispatch();
-  const {user,loading,errors} = useSelector((state:any)=>state.auth)
-
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [process, setProcess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -43,13 +41,31 @@ const SignupForm = () => {
         .oneOf([Yup.ref("password")], "Passwords must match")
         .required("Confirm Password is required"),
     }),
-    onSubmit: (values) => {
-           dispatch(login(values)).then((res:any) => {
-              if (res.meta.requestStatus === "fulfilled") {
-                handleSubmit(values);
-              }
-            });   
-      handleSubmit(values);
+    onSubmit: async (values) => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Sign up with Supabase
+        const { user } = await authService.signUp(values.email, values.password);
+        
+        if (user) {
+          // After successful signup, you might want to store additional user metadata
+          // like first name and last name in a separate profile table
+          // This would require creating a new service function
+          
+          // Redirect to dashboard or verification page
+          router.push("/dashboard");
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred during signup");
+        }
+      } finally {
+        setLoading(false);
+      }
     },
   });
 
@@ -59,13 +75,6 @@ const SignupForm = () => {
 
   const handleClickShowConfirmPassword = () => {
     setShowConfirmPassword(!showConfirmPassword);
-  };
-
-
-  const handleSubmit = async (values: FormValues) => {
-    console.log(values);
-    router.push("/home")
-    // Add signup API call here
   };
 
   return (
@@ -133,10 +142,34 @@ const SignupForm = () => {
         </div>
       </div>
 
-      <FormControlLabel control={<Checkbox value="agree" />} label="I agree to the terms and conditions" sx={{ my: 1, color: "#9D9D9D", fontWeight: "500", text: "12px" }} />
+      {error && (
+        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+          {error}
+        </Typography>
+      )}
 
-      <Button fullWidth variant="contained" sx={{ py: 1, bgcolor: "#F99F1B", boxShadow: "none", "&:hover": { backgroundColor: "none", color: "none", boxShadow: "none" } }} type="submit">
-        {process ? "Loading..." : "Sign Up"}
+      <FormControlLabel 
+        control={<Checkbox value="agree" />} 
+        label="I agree to the terms and conditions" 
+        sx={{ my: 1, color: "#9D9D9D", fontWeight: "500", text: "12px" }} 
+      />
+
+      <Button 
+        fullWidth 
+        variant="contained" 
+        sx={{ 
+          py: 1, 
+          bgcolor: "#F99F1B", 
+          boxShadow: "none", 
+          "&:hover": { 
+            backgroundColor: "#e89417", 
+            boxShadow: "none" 
+          } 
+        }} 
+        type="submit"
+        disabled={loading}
+      >
+        {loading ? "Creating Account..." : "Sign Up"}
       </Button>
 
       <div className="flex items-center w-full mb-3 mt-[4px]">
@@ -149,7 +182,7 @@ const SignupForm = () => {
         <Typography variant="body2" display="inline" sx={{ color: "#000000", fontSize: "16px", fontWeight: "400" }}>
           Already have an account?
         </Typography>
-        <Link href="/" passHref>
+        <Link href="/login" passHref>
           <Typography variant="body2" sx={{ color: "#FFA726", ml: 0.5, fontWeight: "bold", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
             Login Now!
           </Typography>

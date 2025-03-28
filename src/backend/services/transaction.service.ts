@@ -8,7 +8,7 @@ export const transactionService = {
       .from('transactions')
       .select(`
         *,
-        categories (*)
+        category:categories (*)
       `)
       .order('transaction_date', { ascending: false });
     
@@ -32,7 +32,7 @@ export const transactionService = {
       .from('transactions')
       .select(`
         *,
-        categories (*)
+        category:categories (*)
       `)
       .order('transaction_date', { ascending: false });
 
@@ -122,8 +122,12 @@ export const transactionService = {
     if (expenseError) throw expenseError;
 
     // Calculate totals
-    const totalIncome = incomeData.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
-    const totalExpense = expenseData.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
+    const totalIncome = incomeData.length > 0 
+      ? incomeData.reduce((sum, transaction) => sum + parseFloat(transaction.amount.toString()), 0)
+      : 0;
+    const totalExpense = expenseData.length > 0
+      ? expenseData.reduce((sum, transaction) => sum + parseFloat(transaction.amount.toString()), 0)
+      : 0;
     const balance = totalIncome - totalExpense;
 
     return {
@@ -152,7 +156,7 @@ export const transactionService = {
       .from('transactions')
       .select(`
         amount,
-        categories (id, name, color)
+        category:categories (id, name, color)
       `)
       .eq('type', type)
       .gte('transaction_date', startDate)
@@ -163,22 +167,31 @@ export const transactionService = {
     // Transform data for visualization
     const categoryMap = new Map();
     
-    data.forEach((transaction) => {
-      const category = transaction.categories;
-      const amount = parseFloat(transaction.amount);
-      
-      if (categoryMap.has(category.id)) {
-        categoryMap.set(category.id, {
-          ...category,
-          total: categoryMap.get(category.id).total + amount
-        });
-      } else {
-        categoryMap.set(category.id, {
-          ...category,
-          total: amount
-        });
-      }
-    });
+    if (data && data.length > 0) {
+      data.forEach((transaction) => {
+        // transaction.category is an object that contains the first category
+        const categoryObj = transaction.category;
+        
+        // Check if it's an array and get the first item if so
+        const category = Array.isArray(categoryObj) ? categoryObj[0] : categoryObj;
+        
+        if (!category) return; // Skip if no category
+        
+        const amount = parseFloat(transaction.amount.toString());
+        
+        if (categoryMap.has(category.id)) {
+          categoryMap.set(category.id, {
+            ...category,
+            total: categoryMap.get(category.id).total + amount
+          });
+        } else {
+          categoryMap.set(category.id, {
+            ...category,
+            total: amount
+          });
+        }
+      });
+    }
     
     return Array.from(categoryMap.values());
   }
