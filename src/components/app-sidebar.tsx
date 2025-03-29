@@ -20,7 +20,7 @@ const items = [
     icon: Home,
   },
   {
-    title: "Subscription",
+    title: "Transactions",
     url: "/subscription",
     icon: BadgeDollarSign,
   },

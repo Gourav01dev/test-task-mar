@@ -58,18 +58,32 @@ export const transactionService = {
     return data;
   },
 
-  // Add a new transaction
-  async addTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>) {
+// Add a new transaction
+async addTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>) {
+  try {
+    // Hard code a valid user ID for now
+    // This is a TEMPORARY fix - you should replace this with proper authentication
+    const userId = '5b600c2d-c8a4-4004-b8dd-bb7bf040c4ab'; // Use a valid user ID from your database
+    
+    // Add the user_id to the transaction object
+    const transactionWithUser = {
+      ...transaction,
+      user_id: userId
+    };
+    
     const { data, error } = await supabase
       .from('transactions')
-      .insert(transaction)
+      .insert(transactionWithUser)
       .select()
       .single();
     
     if (error) throw error;
     return data;
-  },
-
+  } catch (error) {
+    console.error('Error adding transaction:', error);
+    throw error;
+  }
+},
   // Update a transaction
   async updateTransaction(id: string, transaction: Partial<Transaction>) {
     const { data, error } = await supabase

@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <div className="flex items-center gap-4">
           {/* Sidebar Toggle Button */}
           <button
-            className="text-gray-600 hover:text-gray-800 transition lg:hidden"
+            className="text-gray-600 hover:text-gray-800 transition md:hidden"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             <Menu className="w-6 h-6" />

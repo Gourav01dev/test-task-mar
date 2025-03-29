@@ -7,7 +7,8 @@ export type User = {
   export type Transaction = {
     id: string;
     user_id: string;
-    amount: number;
+    amount: number | string;
+    category?:string;
     type: 'income' | 'expense';
     category_id: string;
     description?: string;

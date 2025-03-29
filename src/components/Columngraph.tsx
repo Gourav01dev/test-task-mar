@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import ReactApexChart with no SSR
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface ColumnGraphProps {
   id: string;
@@ -11,10 +14,11 @@ interface ColumnGraphProps {
 
 interface ChartState {
   series: { name: string; data: number[] }[];
-  options: ApexCharts.ApexOptions;
+  options: any; // Use 'any' instead of ApexCharts.ApexOptions to avoid SSR issues
 }
 
 const ColumnGraph: React.FC<ColumnGraphProps> = ({ id, rate, name }) => {
+  const [mounted, setMounted] = useState(false);
   const [columnChartState, setColumnChartState] = useState<ChartState>({
     series: [{ name, data: rate }],
     options: {
@@ -33,7 +37,7 @@ const ColumnGraph: React.FC<ColumnGraphProps> = ({ id, rate, name }) => {
       },
       dataLabels: {
         enabled: true,
-        formatter: (val: number) => val.toLocaleString(),
+        formatter: (val: number) => `$${val.toLocaleString()}`,
         offsetY: -20,
         style: { fontSize: '12px', fontWeight: 600, colors: ['#304758'] },
       },
@@ -53,6 +57,7 @@ const ColumnGraph: React.FC<ColumnGraphProps> = ({ id, rate, name }) => {
           align: 'left',
           offsetX: 10,
           style: { colors: '#ACACAC', fontSize: '13px' },
+          formatter: (val: number) => `$${val.toLocaleString()}`,
         },
         title: {
           text: name,
@@ -70,10 +75,30 @@ const ColumnGraph: React.FC<ColumnGraphProps> = ({ id, rate, name }) => {
         labels: { colors: '#212121', useSeriesColors: false },
       },
       tooltip: {
-        y: { formatter: (val: number) => `$ ${val.toLocaleString()} thousands` },
+        y: { formatter: (val: number) => `$${val.toLocaleString()}` },
       },
     },
   });
+
+  // Use effect to indicate when component is mounted on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Update the chart when the rate prop changes
+  useEffect(() => {
+    setColumnChartState(prevState => ({
+      ...prevState,
+      series: [{ name, data: rate }]
+    }));
+  }, [rate, name]);
+
+  // Show a placeholder before the component mounts on the client
+  if (!mounted) {
+    return <div className="h-[350px] w-full flex items-center justify-center bg-gray-100 rounded-md">
+      <p className="text-gray-500">Loading chart...</p>
+    </div>;
+  }
 
   return (
     <div id={id}>

@@ -17,7 +17,7 @@ const SigninImageSection: React.FC = () => {
    height={125}
       src={ "/signin-logo.png" } 
         alt="Person using tablet" 
-        className="h-[500px] w-[500px]"
+        className="h-[500px] w-[500px] rounded-[16px]"
         style={{ objectFit: "cover" }} // `objectFit` prop doesn't exist on Next.js Image component, use `style`
       />
     </Box>

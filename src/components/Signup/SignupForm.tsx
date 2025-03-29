@@ -55,7 +55,7 @@ const SignupForm = () => {
           // This would require creating a new service function
           
           // Redirect to dashboard or verification page
-          router.push("/dashboard");
+          router.push("/home");
         }
       } catch (err) {
         if (err instanceof Error) {

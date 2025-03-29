@@ -1,13 +1,14 @@
-"use client"
-import React, { useState } from 'react';
+"use client";
+import React, { useState, useEffect } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 type BookingGraphProps = {
   id: string;
   rate: number;
+  totalProfit?: number;
 };
 
-const BookingGraph: React.FC<BookingGraphProps> = ({ id, rate }) => {
+const BookingGraph: React.FC<BookingGraphProps> = ({ id, rate, totalProfit }) => {
   const [state, setState] = useState({
     series: [rate], // Represents progress percentage
     options: {
@@ -52,15 +53,24 @@ const BookingGraph: React.FC<BookingGraphProps> = ({ id, rate }) => {
       stroke: {
         lineCap: "round" as const,
       },
-      labels: ["Success Rate"],
+      labels: ["Expense Ratio"],
     },
   });
 
+  // Update chart when rate changes
+  useEffect(() => {
+    setState(prevState => ({
+      ...prevState,
+      series: [rate]
+    }));
+  }, [rate]);
+
   return (
     <div id={id} className='flex flex-col justify-center'>
-     
       <ReactApexChart options={state.options} series={state.series} type="radialBar" height={250} />
-      <p className='text-center text-base font-semibold font-2xl'>Total Profit:2500</p>
+      <p className='text-center text-base font-semibold font-2xl'>
+        Total Profit: ${totalProfit?.toLocaleString() || '0'}
+      </p>
     </div>
   );
 };
