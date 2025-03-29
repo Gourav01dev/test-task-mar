@@ -182,7 +182,7 @@ const SignupForm = () => {
         <Typography variant="body2" display="inline" sx={{ color: "#000000", fontSize: "16px", fontWeight: "400" }}>
           Already have an account?
         </Typography>
-        <Link href="/login" passHref>
+        <Link href="/" passHref>
           <Typography variant="body2" sx={{ color: "#FFA726", ml: 0.5, fontWeight: "bold", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
             Login Now!
           </Typography>
