@@ -417,8 +417,10 @@ const TransactionPage: React.FC = () => {
                   </span>
                 </TableCell>
                 <TableCell>
-                  {transaction.category ? transaction.category.name : getCategoryName(transaction.category_id)}
-                </TableCell>
+  {transaction.category && typeof transaction.category === 'object' 
+    ? transaction.category.name 
+    : getCategoryName(transaction.category_id)}
+</TableCell>
                 <TableCell className={`text-right font-medium ${
                   transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                 }`}>

@@ -1,16 +1,30 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
-import ColumnGraph from "@/components/Columngraph";
+import dynamic from 'next/dynamic';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import BookingGraph from "@/components/PieGraph";
 import { dashboardService } from "@/backend/services/dashboard.service";
+
+// Dynamically import chart components with no SSR
+const ColumnGraph = dynamic(() => import("@/components/Columngraph"), { 
+  ssr: false,
+  loading: () => <div className="h-[350px] flex items-center justify-center bg-gray-100 rounded">
+    <p className="text-gray-500">Loading chart...</p>
+  </div>
+});
+
+const BookingGraph = dynamic(() => import("@/components/PieGraph"), { 
+  ssr: false,
+  loading: () => <div className="h-[250px] flex items-center justify-center bg-gray-100 rounded">
+    <p className="text-gray-500">Loading chart...</p>
+  </div>
+});
 
 const HomePage = () => {
   const [loading, setLoading] = useState(true);
@@ -46,6 +60,12 @@ const HomePage = () => {
   
   const [profitRatio, setProfitRatio] = useState(0);
   const [totalProfit, setTotalProfit] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -103,8 +123,18 @@ const HomePage = () => {
       }
     };
 
-    fetchDashboardData();
-  }, []);
+    // Only fetch data after component is mounted
+    if (isMounted) {
+      fetchDashboardData();
+    }
+  }, [isMounted]);
+
+  // If not mounted yet, return a simple loading state
+  if (!isMounted) {
+    return <div className="flex justify-center items-center h-[400px]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="w-full max-w-[100dvw] mx-auto flex flex-col gap-5">
@@ -140,7 +170,11 @@ const HomePage = () => {
               <CardTitle>Income</CardTitle>
             </CardHeader>
             <CardContent>
-              <ColumnGraph id="income" name="Income" rate={monthlyData.incomeData} />
+              <Suspense fallback={<div className="h-[350px] flex items-center justify-center bg-gray-100 rounded">
+                <p className="text-gray-500">Loading income chart...</p>
+              </div>}>
+                <ColumnGraph id="income" name="Income" rate={monthlyData.incomeData} />
+              </Suspense>
             </CardContent>
           </Card>
           
@@ -150,7 +184,11 @@ const HomePage = () => {
                 <CardTitle>Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <ColumnGraph id="expense" name="Expenses" rate={monthlyData.expenseData} />
+                <Suspense fallback={<div className="h-[350px] flex items-center justify-center bg-gray-100 rounded">
+                  <p className="text-gray-500">Loading expense chart...</p>
+                </div>}>
+                  <ColumnGraph id="expense" name="Expenses" rate={monthlyData.expenseData} />
+                </Suspense>
               </CardContent>
             </Card>
             
@@ -159,11 +197,15 @@ const HomePage = () => {
                 <CardTitle>Profit</CardTitle>
               </CardHeader>
               <CardContent>
-                <BookingGraph 
-                  id="booking" 
-                  rate={profitRatio} 
-                  totalProfit={totalProfit}
-                />
+                <Suspense fallback={<div className="h-[250px] flex items-center justify-center bg-gray-100 rounded">
+                  <p className="text-gray-500">Loading profit chart...</p>
+                </div>}>
+                  <BookingGraph 
+                    id="booking" 
+                    rate={profitRatio} 
+                    totalProfit={totalProfit}
+                  />
+                </Suspense>
               </CardContent>
             </Card>
           </div>
