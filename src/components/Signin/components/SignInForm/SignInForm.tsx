@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import InputField from "@/components/Signin/components/InputFeild/InputFeild";
-import { Box, Button, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material";
+import { Box, Button, Checkbox, Divider, FormControlLabel, Typography, Alert } from "@mui/material";
 import Link from "next/link";
 import { authService } from "@/backend/services/auth.service";
 
@@ -19,6 +19,14 @@ const SigninForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      router.push('/home');
+    }
+  }, [router]);
 
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -35,14 +43,20 @@ const SigninForm = () => {
         setError(null);
         
         // Use our Supabase auth service to sign in
-        await authService.signIn(values.email, values.password);
+        const response = await authService.signIn(values.email, values.password);
         
         // If successful, redirect to dashboard
-        router.push('/dashboard');
+        router.push('/home');
       } catch (err) {
         // Handle error
         if (err instanceof Error) {
           setError(err.message);
+          
+          // Check if error is about email verification
+          if (err.message.includes("Email not confirmed") || 
+              err.message.includes("verify your email")) {
+            setError("Please verify your email before logging in");
+          }
         } else {
           setError('An unknown error occurred');
         }
@@ -54,6 +68,28 @@ const SigninForm = () => {
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleResendVerification = async () => {
+    if (!formik.values.email) {
+      setError("Please enter your email address to resend verification");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await authService.resendVerification(formik.values.email);
+      setVerificationSent(true);
+      setError(null);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to resend verification email');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -87,10 +123,38 @@ const SigninForm = () => {
         </div>
       </div>
       
-      {error && (
+      {error && error.includes("verify your email") && (
+        <Box mt={2} mb={2}>
+          <Alert 
+            severity="warning" 
+            action={
+              <Button 
+                color="inherit" 
+                size="small" 
+                onClick={handleResendVerification}
+                disabled={loading || verificationSent}
+              >
+                {verificationSent ? "Sent!" : "Resend"}
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
+        </Box>
+      )}
+      
+      {error && !error.includes("verify your email") && (
         <Typography color="error" variant="body2" sx={{ mt: 1 }}>
           {error}
         </Typography>
+      )}
+      
+      {verificationSent && (
+        <Box mt={2} mb={2}>
+          <Alert severity="success">
+            Verification email has been sent. Please check your inbox.
+          </Alert>
+        </Box>
       )}
       
       <FormControlLabel 

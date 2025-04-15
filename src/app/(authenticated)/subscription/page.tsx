@@ -76,6 +76,7 @@ const TransactionPage: React.FC = () => {
   const fetchCategories = async () => {
     try {
       const data = await categoryService.getCategories();
+      console.log(data,"data")
       setCategories(data);
     } catch (err) {
       console.error("Error fetching categories:", err);

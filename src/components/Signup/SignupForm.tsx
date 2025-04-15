@@ -50,6 +50,7 @@ const SignupForm = () => {
         const { user } = await authService.signUp(values.email, values.password);
         
         if (user) {
+          console.log(user)
           // After successful signup, you might want to store additional user metadata
           // like first name and last name in a separate profile table
           // This would require creating a new service function
