@@ -42,7 +42,7 @@ export const categoryService = {
   },
 
   // Add a new category for the current user
-  async addCategory(category: Omit<Category, 'id' | 'created_at' | 'user_id'>) {
+  async addCategory(category: Omit<Category, 'id' | 'created_at' >) {
     // Get the current user's ID
     const { data: { user } } = await supabase.auth.getUser();
     
